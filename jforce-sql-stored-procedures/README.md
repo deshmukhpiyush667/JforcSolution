@@ -1,19 +1,139 @@
-# Employee Management & Payroll – SQL Stored Procedures
+# Employee Management and Payroll System
 
-**JForce Solutions – SQL Developer Interview Task (Junior / R1)**
+**JForce Solutions – SQL Developer Interview Task**
 
-Stored procedures for an Employee Management and Payroll database, written for **MySQL 8.x / MariaDB 10.x** and tested on MariaDB 10.11.
+## Project Overview
+
+This project is a simple Employee Management and Payroll System built using MySQL. It stores employee information and uses stored procedures to generate salary reports, calculate salary components, assign salary grades, and summarize department salaries.
+
+The project was developed and tested using MariaDB 10.11 and is compatible with MySQL 8.x / MariaDB 10.x, subject to version-specific SQL behavior.
 
 ## Project Structure
 
 | File | Description |
-|------|-------------|
-| `database.sql` | Creates the `employee_payroll_db` database, the `employees` table and 12 sample employees |
-| `procedures.sql` | All four stored procedures (3 required + bonus) |
-| `test_procedures.sql` | `CALL` statements used for the demo / testing |
-| `README.md` | This document |
+|---|---|
+| `database.sql` | Creates the database and employees table, and inserts 12 sample employee records. |
+| `procedures.sql` | Contains the four stored procedures. |
+| `test_procedures.sql` | Contains the SQL commands used to test the procedures. |
+| `README.md` | Provides project details and setup instructions. |
 
-## How to Run
+## Database Design
+
+The project uses a database named `employee_payroll_db` and an `employees` table.
+
+The table contains the following columns:
+
+- `employee_id` – Unique ID for each employee and the primary key.
+- `employee_name` – Employee's name.
+- `department` – Department in which the employee works.
+- `designation` – Employee's job role.
+- `basic_salary` – Employee's basic salary.
+- `joining_date` – Date the employee joined the company.
+- `status` – Employment status (`Active` or `Inactive`).
+
+The database includes 12 sample employees from IT, HR, Finance, Sales, and Marketing.
+
+I also included constraints to prevent negative salaries and invalid employment statuses, along with an index on `department` to support department-based queries.
+
+## Stored Procedures
+
+### 1. GetEmployeeSalaryReport
+
+This procedure takes a department name and a minimum salary as input. It returns active employees in the selected department whose basic salary is greater than or equal to the specified amount.
+
+It also checks for an empty department name and a negative or invalid minimum salary.
+
+**Example:**
+
+```sql
+CALL GetEmployeeSalaryReport('IT', 50000);
+```
+
+This displays matching IT employees earning at least ₹50,000, sorted according to the procedure's defined ordering.
+
+### 2. CalculateEmployeeSalary
+
+This procedure accepts an employee ID and calculates the employee's salary components using the basic salary.
+
+The calculation uses the following percentages:
+
+- HRA: 20% of basic salary
+- DA: 10% of basic salary
+- PF: 12% of basic salary
+- Net salary: Basic salary + HRA + DA − PF
+
+**Example:**
+
+```sql
+CALL CalculateEmployeeSalary(101);
+```
+
+For employee 101, whose basic salary is ₹75,000, the calculated values are:
+
+| Component | Amount |
+|---|---:|
+| Basic Salary | ₹75,000 |
+| HRA | ₹15,000 |
+| DA | ₹7,500 |
+| PF | ₹9,000 |
+| Net Salary | ₹88,500 |
+
+The procedure also reports an error if the employee ID does not exist.
+
+### 3. EmployeeSalaryGrade
+
+This procedure accepts an employee ID and assigns a grade based on the employee's basic salary.
+
+| Basic Salary | Grade |
+|---|---|
+| Below ₹30,000 | C |
+| ₹30,000 to ₹60,000, inclusive | B |
+| Above ₹60,000 | A |
+
+**Example:**
+
+```sql
+CALL EmployeeSalaryGrade(101);
+```
+
+Employee 101 earns ₹75,000, so the assigned grade is A.
+
+### 4. GetDepartmentSummary (Bonus)
+
+This procedure generates a salary summary for a selected department. It uses aggregate functions to calculate:
+
+- Total number of employees
+- Average basic salary
+- Highest basic salary
+- Lowest basic salary
+- Total basic salary expenditure
+
+**Examples:**
+
+```sql
+CALL GetDepartmentSummary('IT');
+
+CALL GetDepartmentSummary('Legal');
+```
+
+If the requested department does not exist, the procedure returns a message indicating that the department was not found.
+
+## Error Handling
+
+I added input validation to handle invalid values and missing employee records. The procedures use `SIGNAL SQLSTATE '45000'` to return meaningful error messages when an input does not meet the required conditions.
+
+For example, the procedures handle negative salary inputs, empty department names, and employee IDs that do not exist.
+
+## How to Run the Project
+
+### Requirements
+
+- MySQL 8.x or a compatible MariaDB version
+- MySQL Workbench or a MySQL command-line client
+
+### Option 1: Using the MySQL command line
+
+Run the files in the following order:
 
 ```bash
 mysql -u root -p < database.sql
@@ -21,76 +141,29 @@ mysql -u root -p < procedures.sql
 mysql -u root -p --table < test_procedures.sql
 ```
 
-(Or open each file in MySQL Workbench and execute in the order above.)
+Enter your MySQL password when prompted.
 
-## Database Design
+### Option 2: Using MySQL Workbench
 
-`employees` table: `employee_id` (INT, **PK**), `employee_name`, `department`, `designation`, `basic_salary` (DECIMAL(10,2)), `joining_date` (DATE), `status` (Active / Inactive).
+1. Open MySQL Workbench and connect to your database server.
+2. Open `database.sql` and execute it.
+3. Open `procedures.sql` and execute it.
+4. Open `test_procedures.sql` and execute the test queries.
+5. Check the result grids and Action Output panel to verify the results.
 
-- `CHECK` constraints: salary ≥ 0, status limited to `Active` / `Inactive`
-- Index on `department` for faster department queries
-- 12 employees across IT, HR, Finance, Sales and Marketing, with salaries from ₹25,000 to ₹85,000 and both Active and Inactive statuses
+## Concepts Used
 
-## Procedures
+- Database and table creation
+- Primary keys and data constraints
+- SQL data types
+- Stored procedures and `IN` parameters
+- Local variables and conditional logic
+- `IF` and `CASE` expressions
+- Aggregate functions: `COUNT`, `AVG`, `MAX`, `MIN`, and `SUM`
+- Salary calculations
+- Input validation and error handling
+- Indexes and query execution
 
-### 1. `GetEmployeeSalaryReport(p_department_name, p_minimum_salary)`
-Returns Active employees in the given department with `basic_salary >= p_minimum_salary`.
-Validates that the department is not empty and the salary is not negative.
+## Conclusion
 
-```sql
-CALL GetEmployeeSalaryReport('IT', 50000);
-```
-| Employee ID | Employee Name | Department | Designation | Basic Salary | Joining Date |
-|---|---|---|---|---|---|
-| 101 | Rahul Sharma | IT | Senior Developer | 75000.00 | 2019-03-15 |
-| 102 | Priya Patil | IT | Software Developer | 55000.00 | 2021-07-01 |
-
-(Sneha Kulkarni is excluded because she is Inactive.)
-
-### 2. `CalculateEmployeeSalary(p_employee_id)`
-HRA = 20%, DA = 10%, PF = 12% of basic. **Net = Basic + HRA + DA − PF** (effectively 118% of basic).
-Raises an error if the employee ID does not exist.
-
-```sql
-CALL CalculateEmployeeSalary(101);
-```
-| Employee Name | Basic Salary | HRA | DA | PF | Net Salary |
-|---|---|---|---|---|---|
-| Rahul Sharma | 75000.00 | 15000.00 | 7500.00 | 9000.00 | 88500.00 |
-
-### 3. `EmployeeSalaryGrade(p_employee_id)`
-Uses a `CASE` expression:
-
-| Basic Salary | Grade |
-|---|---|
-| Below ₹30,000 | C |
-| ₹30,000 – ₹60,000 (inclusive) | B |
-| Above ₹60,000 | A |
-
-```sql
-CALL EmployeeSalaryGrade(101);   -- A
-```
-
-### 4. Bonus – `GetDepartmentSummary(p_department_name)`
-Returns total employees, average, highest, lowest salary and total salary expenditure using `COUNT`, `AVG`, `MAX`, `MIN`, `SUM`.
-If the department does not exist it returns a friendly message.
-
-```sql
-CALL GetDepartmentSummary('IT');
-CALL GetDepartmentSummary('Legal');   -- Department "Legal" does not exist.
-```
-
-## Error Handling
-
-Validation uses `SIGNAL SQLSTATE '45000'` with clear messages, e.g.:
-
-```
-CALL CalculateEmployeeSalary(999);
-ERROR 1644 (45000): Error: Employee ID does not exist.
-
-CALL GetEmployeeSalaryReport('IT', -100);
-ERROR 1644 (45000): Error: Minimum salary must be a non-negative value.
-```
-
-## Concepts Demonstrated
-Stored procedures • IN parameters • local variables (`DECLARE`) • `IF` / `CASE` logic • aggregate functions • arithmetic calculations • validation with `SIGNAL` • constraints and indexes • commented, consistently formatted code.
+This project helped me practise writing reusable SQL stored procedures, working with employee data, performing salary calculations, and generating department-level reports. It also gave me practical experience with input validation and testing different scenarios in MySQL.
